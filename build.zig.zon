@@ -1,0 +1,16 @@
+.{
+    .name = "zig-vtk",
+    .version = "9.3.1",
+
+    .dependencies = .{
+        .vtk = .{
+            .url = "https://www.vtk.org/files/release/9.3/VTK-9.3.1.tar.gz",
+            .hash = "1220d09e36606b011840c3cdbac64a009f3cb5bbb8d8588ccd1bccc0bc66b69f33eb",
+            .lazy = false,
+        },
+    },
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+    },
+}
