@@ -1,5 +1,7 @@
 const std = @import("std");
 
+//NOTE: This file is WIP
+
 pub const ExportHeaderConfig = struct {
     library_target: []const u8, // Required parameter
     base_name: ?[]const u8 = null, // Optional, default null
@@ -14,7 +16,7 @@ pub const ExportHeaderConfig = struct {
     custom_content_from_variable: ?[]const u8 = null, // Optional, default null
 
     // Function to generate the header file content based on configuration
-    pub fn generateHeader(self: ExportHeaderConfig) ![]u8 {
+    pub fn generateHeader(self: *ExportHeaderConfig) ![]u8 {
         const allocator = std.heap.page_allocator;
         var header = std.ArrayList(u8).init(allocator);
         defer header.deinit();
@@ -34,11 +36,13 @@ pub const ExportHeaderConfig = struct {
             try header.appendSlice("\n#  define ");
             try header.appendSlice(self.export_macro_name orelse self.base_name orelse self.library_target);
             try header.appendSlice("\n#  define ");
-            try header.appendSlice(self.no_export_macro_name orelse std.mem.concat(allocator, u8, self.library_target, "_NO_EXPORT"));
+            try header.appendSlice(self.no_export_macro_name orelse self.library_target);
+            try header.appendSlice("_NO_EXPORT");
             try header.appendSlice("\n#else\n");
         } else {
             try header.appendSlice("#ifndef ");
-            try header.appendSlice(self.export_macro_name orelse "EXPORT_MACRO");
+            try header.appendSlice(self.export_macro_name orelse self.base_name orelse self.library_target);
+            try header.appendSlice("_EXPORT");
             try header.appendSlice("\n#    ifdef ");
             try header.appendSlice(self.prefix_name orelse self.library_target);
             try header.appendSlice("_EXPORT\n");

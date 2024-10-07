@@ -1,5 +1,4 @@
 const std = @import("std");
-const vtkmodule = @import("vtkModule.zig");
 
 const TargetOpts = std.Build.ResolvedTarget;
 const OptimizeOpts = std.builtin.OptimizeMode;
@@ -131,14 +130,11 @@ pub fn addVtkCommon(b: *std.Build, dep: *Dependency, target: TargetOpts, optimiz
         .optimize = optimize,
     });
 
-    const cfg = vtkmodule.ExportHeaderConfig{
-        .library_target = "vtkCommonCore",
-    };
-    std.debug.print("{s}\n", .{try cfg.generateHeader()});
-
     lib.linkLibCpp();
 
     lib.addIncludePath(dep.path("Common/Core"));
+    lib.addIncludePath(dep.path("Utilities/KWIML"));
+    lib.addIncludePath(b.path("include"));
     lib.addCSourceFiles(.{
         .root = dep.path(commonCorePath),
         .files = &commonCoreSources,
