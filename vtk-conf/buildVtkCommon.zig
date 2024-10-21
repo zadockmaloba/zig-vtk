@@ -245,6 +245,7 @@ pub fn addVtkCommon(b: *std.Build, dep: *Dependency, target: TargetOpts, optimiz
                 .VTK_DEBUG_LEAKS = 1,
                 .VTK_SMP_ENABLE_SEQUENTIAL = 1,
                 .VTK_SMP_DEFAULT_IMPLEMENTATION_SEQUENTIAL = 1,
+                .VTK_MAX_THREADS = 64,
             },
         );
 
@@ -252,6 +253,7 @@ pub fn addVtkCommon(b: *std.Build, dep: *Dependency, target: TargetOpts, optimiz
     }
 
     commonCore.defineCMacro("VTK_SMP_IMPLEMENTATION_TYPE", "Sequential");
+    //commonCore.defineCMacro("VTK_MAX_THREADS", "64");
 
     commonCore.linkLibCpp();
     commonCore.linkLibrary(vtkSys);
