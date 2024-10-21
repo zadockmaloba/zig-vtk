@@ -30,7 +30,11 @@ This README tracks the progress of porting various VTK modules to the Zig build 
 - [ ] **VTK Rendering FreeType**  
 - [ ] **VTK Rendering ContextOpenGL2**  
 - [ ] **VTK Common Math**  
-- [ ] **VTK Accelerators VTKm**  
+- [ ] **VTK Accelerators VTKm** 
+- [ ] **VTK Utilities** 
+    - [ ] **vtkkwiml**  
+    - [x] **vtksys**  
+    - [ ] **vtkmetaio**  
 
 ## Instructions
 
