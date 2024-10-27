@@ -4,7 +4,7 @@ This README tracks the progress of porting various VTK modules to the Zig build 
 
 ## Progress Tracking
 
-- [ ] **VTK Common Core**  
+- [x] **VTK Common Core**  
 - [ ] **VTK Common DataModel**  
 - [ ] **VTK IO**  
     - [ ] **VTK I/O XML**  
