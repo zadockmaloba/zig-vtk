@@ -26,7 +26,7 @@ const commonCoreConfigHeaders = .{
     "vtkPlatform.h",
     "vtkSMP.h",
     "vtkThreads.h",
-    "vtkTypedArray.h",
+    //"vtkTypedArray.h",
     "vtkTypeListMacros.h",
     "vtkVersionMacros.h",
     "vtkVersionFull.h",
@@ -286,6 +286,7 @@ pub fn addVtkCommon(b: *std.Build, dep: *Dependency, target: TargetOpts, optimiz
     commonCore.addIncludePath(dep.path("Utilities/KWIML"));
     commonCore.addIncludePath(dep.path("Utilities/KWSys"));
     commonCore.addIncludePath(b.path("include"));
+    commonCore.addIncludePath(b.path("include/vtk_typed_arrays"));
     commonCore.addCSourceFiles(.{
         .root = dep.path(commonCorePath),
         .files = &commonCoreSources,
@@ -293,6 +294,19 @@ pub fn addVtkCommon(b: *std.Build, dep: *Dependency, target: TargetOpts, optimiz
     });
     return commonCore;
 }
+
+const vtk_types = &.{
+    "Int8",
+    "Int16",
+    "Int32",
+    "Int64",
+    "UInt8",
+    "UInt16",
+    "UInt32",
+    "UInt64",
+    "Float32",
+    "Float64",
+};
 
 // Define the default set of scalar types
 const default_array_types = &.{
