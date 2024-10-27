@@ -3,8 +3,12 @@ const std = @import("std");
 const TargetOpts = std.Build.ResolvedTarget;
 const OptimizeOpts = std.builtin.OptimizeMode;
 const Dependency = std.Build.Dependency;
+const Builder = std.build.Builder;
+const Allocator = std.mem.Allocator;
+const ArrayList = std.ArrayList;
 
 const commonCorePath = "Common/Core/";
+const commonDataModelPath = "Common/DataModel/";
 const vtkSysPath = "Utilities/KWSys/vtksys/";
 
 const commonCoreConfigHeaders = .{
@@ -192,6 +196,12 @@ pub fn addVtkCommon(b: *std.Build, dep: *Dependency, target: TargetOpts, optimiz
         .optimize = optimize,
     });
 
+    //var commonDataModel = b.addStaticLibrary(.{
+    //    .name = "vtkCommonDataModel",
+    //    .target = target,
+    //    .optimize = optimize,
+    //});
+
     var vtkSys = b.addStaticLibrary(.{
         .name = "vtkSys",
         .target = target,
@@ -226,10 +236,18 @@ pub fn addVtkCommon(b: *std.Build, dep: *Dependency, target: TargetOpts, optimiz
     vtkSys.addCSourceFiles(.{
         .root = dep.path(vtkSysPath),
         .files = &vtkSysSources,
-        .flags = &.{"-std=c++14"},
+        .flags = &.{"-std=c++17"},
     });
 
     vtkSys.linkLibCpp();
+
+    var arrDispatch = try Dispatch.init(b.allocator);
+    defer arrDispatch.deinit();
+
+    try arrDispatch.createArrayDispatch("vtkAffineArray", default_array_types);
+    try arrDispatch.createArrayDispatch("vtkConstantArray", default_array_types);
+    try arrDispatch.createArrayDispatch("vtkStdFunctionArray", default_array_types);
+    try arrDispatch.generateArrayDispatchHeader();
 
     inline for (commonCoreConfigHeaders) |conf_header| {
         const tmp = b.addConfigHeader(
@@ -246,6 +264,11 @@ pub fn addVtkCommon(b: *std.Build, dep: *Dependency, target: TargetOpts, optimiz
                 .VTK_SMP_ENABLE_SEQUENTIAL = 1,
                 .VTK_SMP_DEFAULT_IMPLEMENTATION_SEQUENTIAL = 1,
                 .VTK_MAX_THREADS = 64,
+                .VTK_USE_SCALED_SOA_ARRAYS = 0,
+                .VTK_DISPATCH_AFFINE_ARRAYS = 1,
+                .VTK_DISPATCH_CONSTANT_ARRAYS = 1,
+                .VTK_DISPATCH_STD_FUNCTION_ARRAYS = 1,
+                .VTK_ARRAYDISPATCH_ARRAY_LIST = arrDispatch.result.items,
             },
         );
 
@@ -253,18 +276,128 @@ pub fn addVtkCommon(b: *std.Build, dep: *Dependency, target: TargetOpts, optimiz
     }
 
     commonCore.defineCMacro("VTK_SMP_IMPLEMENTATION_TYPE", "Sequential");
+    commonCore.defineCMacro("VTKCOMMONCORE_STATIC_DEFINE", "1");
     //commonCore.defineCMacro("VTK_MAX_THREADS", "64");
 
     commonCore.linkLibCpp();
     commonCore.linkLibrary(vtkSys);
-    commonCore.addIncludePath(dep.path("Common/Core"));
+    commonCore.addIncludePath(dep.path(commonCorePath));
+    commonCore.addIncludePath(dep.path(commonDataModelPath));
     commonCore.addIncludePath(dep.path("Utilities/KWIML"));
     commonCore.addIncludePath(dep.path("Utilities/KWSys"));
     commonCore.addIncludePath(b.path("include"));
     commonCore.addCSourceFiles(.{
         .root = dep.path(commonCorePath),
         .files = &commonCoreSources,
-        .flags = &.{"-std=c++14"},
+        .flags = &.{"-std=c++17"},
     });
     return commonCore;
 }
+
+// Define the default set of scalar types
+const default_array_types = &.{
+    "char",
+    "double",
+    "float",
+    "int",
+    "long",
+    "long long",
+    "short",
+    "signed char",
+    "unsigned char",
+    "unsigned int",
+    "unsigned long",
+    "unsigned long long",
+    "unsigned short",
+    "vtkIdType",
+};
+
+// Create a structure to store dispatch information
+pub const Dispatch = struct {
+    containers: ArrayList([]const u8),
+    headers: ArrayList([]const u8),
+    arrays: ArrayList([]const u8),
+    readonly_arrays: ArrayList([]const u8),
+    result: ArrayList(u8),
+    allocator: Allocator,
+
+    pub fn init(allocator: Allocator) !Dispatch {
+        return Dispatch{
+            .containers = ArrayList([]const u8).init(allocator),
+            .headers = ArrayList([]const u8).init(allocator),
+            .arrays = ArrayList([]const u8).init(allocator),
+            .readonly_arrays = ArrayList([]const u8).init(allocator),
+            .result = ArrayList(u8).init(allocator),
+            .allocator = allocator,
+        };
+    }
+
+    pub fn deinit(self: *Dispatch) void {
+        self.containers.deinit();
+        self.headers.deinit();
+        self.arrays.deinit();
+        self.readonly_arrays.deinit();
+    }
+
+    // Helper function to create an array dispatch
+    pub fn createArrayDispatch(dispatch: *Dispatch, class: []const u8, types: []const []const u8) !void {
+        try dispatch.containers.append(class);
+        try dispatch.headers.append(try std.fmt.allocPrint(dispatch.allocator, "{s}.h", .{class}));
+        for (types) |value_type| {
+            try dispatch.arrays.append(try std.fmt.allocPrint(dispatch.allocator, "{s}<{s}>", .{ class, value_type }));
+        }
+    }
+
+    pub fn createArrayDispatchImplicit(dispatch: *Dispatch, class: []const u8, types: []const []const u8) !void {
+        try dispatch.containers.append(class);
+        try dispatch.headers.append(try std.fmt.allocPrint(dispatch.allocator, "{s}.h", .{class}));
+        for (types) |value_type| {
+            try dispatch.arrays.append(try std.fmt.allocPrint(dispatch.allocator, "{s}<{s}>", .{ class, value_type }));
+        }
+    }
+
+    // Function to generate array dispatch header
+    pub fn generateArrayDispatchHeader(dispatch: *Dispatch) !void {
+        try dispatch.result.appendSlice("// SPDX-License-Identifier: BSD-3-Clause\n");
+        try dispatch.result.appendSlice("// This file is autogenerated. Do not edit.\n\n");
+        try dispatch.result.appendSlice("#ifndef vtkArrayDispatchArrayList_h\n");
+        try dispatch.result.appendSlice("#define vtkArrayDispatchArrayList_h\n\n");
+        try dispatch.result.appendSlice("#include <vtkTypeList.h>\n");
+
+        for (dispatch.headers.items) |header| {
+            try dispatch.result.appendSlice(try std.fmt.allocPrint(dispatch.allocator, "#include \"{s}\"\n", .{header}));
+        }
+
+        try dispatch.result.appendSlice("\nnamespace vtkArrayDispatch {\n");
+        try dispatch.result.appendSlice("VTK_ABI_NAMESPACE_BEGIN\n\n");
+
+        try dispatch.result.appendSlice("typedef vtkTypeList::Unique<\n");
+        try dispatch.result.appendSlice("  vtkTypeList::Create<");
+
+        var separator: []const u8 = "";
+        for (dispatch.arrays.items) |array| {
+            try dispatch.result.appendSlice(try std.fmt.allocPrint(dispatch.allocator, "{s}\n    {s}", .{ separator, array }));
+            separator = ",";
+        }
+
+        try dispatch.result.appendSlice("\n  >\n>::Result Arrays;\n\n");
+
+        try dispatch.result.appendSlice("typedef vtkTypeList::Unique<\n");
+        try dispatch.result.appendSlice("  vtkTypeList::Create<\n");
+
+        separator = "";
+        for (dispatch.readonly_arrays.items) |array| {
+            try dispatch.result.appendSlice(try std.fmt.allocPrint(dispatch.allocator, "{s}\n    {s}", .{ separator, array }));
+            separator = ",";
+        }
+
+        try dispatch.result.appendSlice("\n  >\n>::Result ReadOnlyArrays;\n\n");
+
+        try dispatch.result.appendSlice("typedef vtkTypeList::Unique<\n");
+        try dispatch.result.appendSlice("vtkTypeList::Append<Arrays,\nReadOnlyArrays>::Result\n>::Result AllArrays;\n\n");
+
+        try dispatch.result.appendSlice("VTK_ABI_NAMESPACE_END\n\n");
+        try dispatch.result.appendSlice("} // end namespace vtkArrayDispatch\n");
+        try dispatch.result.appendSlice("#endif // vtkArrayDispatchArrayList_h\n");
+    }
+};
