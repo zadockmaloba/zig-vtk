@@ -1,5 +1,7 @@
 const std = @import("std");
 
+const thirdparty = @import("buildVtkThirdParty.zig");
+
 const TargetOpts = std.Build.ResolvedTarget;
 const OptimizeOpts = std.builtin.OptimizeMode;
 const Dependency = std.Build.Dependency;
@@ -9,12 +11,14 @@ const ArrayList = std.ArrayList;
 
 const commonCorePath = "Common/Core/";
 const commonDataModelPath = "Common/DataModel/";
+const commonMathPath = "Common/Math/";
 const vtkSysPath = "Utilities/KWSys/vtksys/";
 
 const commonCoreConfigHeaders = .{
     "vtkABINamespace.h",
     "vtkArrayDispatchArrayList.h",
     "vtkBuild.h",
+    "vtkCxxABIConfigure.h",
     "vtkDebug.h",
     "vtkDebugRangeIterators.h",
     "vtkEndian.h",
@@ -26,7 +30,6 @@ const commonCoreConfigHeaders = .{
     "vtkPlatform.h",
     "vtkSMP.h",
     "vtkThreads.h",
-    //"vtkTypedArray.h",
     "vtkTypeListMacros.h",
     "vtkVersionMacros.h",
     "vtkVersionFull.h",
@@ -185,22 +188,305 @@ const vtkSysSources = .{
     "FStream.cxx",
 };
 
+const commonDataModelConfigHeaders = &.{};
+
+const commonDataModelSources = &.{
+    "vtkAMRBox.cxx",
+    "vtkAMRUtilities.cxx",
+    "vtkAbstractCellLinks.cxx",
+    "vtkAbstractCellLocator.cxx",
+    "vtkAbstractElectronicData.cxx",
+    "vtkAbstractPointLocator.cxx",
+    "vtkAdjacentVertexIterator.cxx",
+    "vtkAnimationScene.cxx",
+    "vtkAnnotation.cxx",
+    "vtkAnnotationLayers.cxx",
+    "vtkArrayData.cxx",
+    "vtkAtom.cxx",
+    "vtkAttributesErrorMetric.cxx",
+    "vtkBSPCuts.cxx",
+    "vtkBSPIntersections.cxx",
+    "vtkBezierCurve.cxx",
+    "vtkBezierHexahedron.cxx",
+    "vtkBezierInterpolation.cxx",
+    "vtkBezierQuadrilateral.cxx",
+    "vtkBezierTetra.cxx",
+    "vtkBezierTriangle.cxx",
+    "vtkBezierWedge.cxx",
+    "vtkBiQuadraticQuad.cxx",
+    "vtkBiQuadraticQuadraticHexahedron.cxx",
+    "vtkBiQuadraticQuadraticWedge.cxx",
+    "vtkBiQuadraticTriangle.cxx",
+    "vtkBond.cxx",
+    "vtkBoundingBox.cxx",
+    "vtkBox.cxx",
+    "vtkCell.cxx",
+    "vtkCell3D.cxx",
+    "vtkCellArray.cxx",
+    "vtkCellArrayIterator.cxx",
+    "vtkCellAttribute.cxx",
+    "vtkCellData.cxx",
+    "vtkCellGrid.cxx",
+    "vtkCellGridBoundsQuery.cxx",
+    "vtkCellGridResponders.cxx",
+    "vtkCellGridSidesQuery.cxx",
+    "vtkCellIterator.cxx",
+    "vtkCellLinks.cxx",
+    "vtkCellLocator.cxx",
+    "vtkCellLocatorStrategy.cxx",
+    "vtkCellMetadata.cxx",
+    "vtkCellTreeLocator.cxx",
+    "vtkCellTypes.cxx",
+    "vtkClosestNPointsStrategy.cxx",
+    "vtkClosestPointStrategy.cxx",
+    "vtkCompositeDataIterator.cxx",
+    "vtkCompositeDataSet.cxx",
+    "vtkCone.cxx",
+    "vtkConvexPointSet.cxx",
+    "vtkCoordinateFrame.cxx",
+    "vtkCubicLine.cxx",
+    "vtkCylinder.cxx",
+    "vtkDataAssembly.cxx",
+    "vtkDataAssemblyUtilities.cxx",
+    "vtkDataObject.cxx",
+    "vtkDataObjectCollection.cxx",
+    "vtkDataObjectTree.cxx",
+    "vtkDataObjectTreeIterator.cxx",
+    "vtkDataObjectTypes.cxx",
+    "vtkDataSet.cxx",
+    "vtkDataSetAttributes.cxx",
+    "vtkDataSetAttributesFieldList.cxx",
+    "vtkDataSetCellIterator.cxx",
+    "vtkDataSetCollection.cxx",
+    "vtkDirectedAcyclicGraph.cxx",
+    "vtkDirectedGraph.cxx",
+    "vtkDistributedGraphHelper.cxx",
+    "vtkEdgeListIterator.cxx",
+    "vtkEdgeTable.cxx",
+    "vtkEmptyCell.cxx",
+    "vtkExplicitStructuredGrid.cxx",
+    "vtkExtractStructuredGridHelper.cxx",
+    "vtkFieldData.cxx",
+    "vtkFindCellStrategy.cxx",
+    "vtkGenericAdaptorCell.cxx",
+    "vtkGenericAttribute.cxx",
+    "vtkGenericAttributeCollection.cxx",
+    "vtkGenericCell.cxx",
+    "vtkGenericCellIterator.cxx",
+    "vtkGenericCellTessellator.cxx",
+    "vtkGenericDataSet.cxx",
+    "vtkGenericEdgeTable.cxx",
+    "vtkGenericInterpolatedVelocityField.cxx",
+    "vtkGenericPointIterator.cxx",
+    "vtkGenericSubdivisionErrorMetric.cxx",
+    "vtkGeometricErrorMetric.cxx",
+    "vtkGraph.cxx",
+    "vtkGraphEdge.cxx",
+    "vtkGraphInternals.cxx",
+    "vtkHexagonalPrism.cxx",
+    "vtkHexahedron.cxx",
+    "vtkHierarchicalBoxDataIterator.cxx",
+    "vtkHierarchicalBoxDataSet.cxx",
+    "vtkHigherOrderCurve.cxx",
+    "vtkHigherOrderHexahedron.cxx",
+    "vtkHigherOrderInterpolation.cxx",
+    "vtkHigherOrderQuadrilateral.cxx",
+    "vtkHigherOrderTetra.cxx",
+    "vtkHigherOrderTriangle.cxx",
+    "vtkHigherOrderWedge.cxx",
+    "vtkHyperTree.cxx",
+    "vtkHyperTreeCursor.cxx",
+    "vtkHyperTreeGrid.cxx",
+    "vtkHyperTreeGridLocator.cxx",
+    "vtkHyperTreeGridGeometricLocator.cxx",
+    "vtkHyperTreeGridNonOrientedCursor.cxx",
+    "vtkHyperTreeGridNonOrientedGeometryCursor.cxx",
+    "vtkHyperTreeGridNonOrientedUnlimitedGeometryCursor.cxx",
+    "vtkHyperTreeGridNonOrientedMooreSuperCursor.cxx",
+    "vtkHyperTreeGridNonOrientedMooreSuperCursorLight.cxx",
+    "vtkHyperTreeGridNonOrientedUnlimitedMooreSuperCursor.cxx",
+    "vtkHyperTreeGridNonOrientedSuperCursor.cxx",
+    "vtkHyperTreeGridNonOrientedSuperCursorLight.cxx",
+    "vtkHyperTreeGridNonOrientedUnlimitedSuperCursor.cxx",
+    "vtkHyperTreeGridNonOrientedVonNeumannSuperCursor.cxx",
+    "vtkHyperTreeGridNonOrientedVonNeumannSuperCursorLight.cxx",
+    "vtkHyperTreeGridOrientedCursor.cxx",
+    "vtkHyperTreeGridOrientedGeometryCursor.cxx",
+    "vtkImageData.cxx",
+    "vtkImageIterator.cxx",
+    "vtkImageTransform.cxx",
+    "vtkImplicitBoolean.cxx",
+    "vtkImplicitDataSet.cxx",
+    "vtkImplicitFunction.cxx",
+    "vtkImplicitFunctionCollection.cxx",
+    "vtkImplicitHalo.cxx",
+    "vtkImplicitSelectionLoop.cxx",
+    "vtkImplicitSum.cxx",
+    "vtkImplicitVolume.cxx",
+    "vtkImplicitWindowFunction.cxx",
+    "vtkInEdgeIterator.cxx",
+    "vtkIncrementalOctreeNode.cxx",
+    "vtkIncrementalOctreePointLocator.cxx",
+    "vtkIncrementalPointLocator.cxx",
+    "vtkInformationQuadratureSchemeDefinitionVectorKey.cxx",
+    "vtkIterativeClosestPointTransform.cxx",
+    "vtkKdNode.cxx",
+    "vtkKdTree.cxx",
+    "vtkKdTreePointLocator.cxx",
+    "vtkLagrangeCurve.cxx",
+    "vtkLagrangeHexahedron.cxx",
+    "vtkLagrangeInterpolation.cxx",
+    "vtkLagrangeQuadrilateral.cxx",
+    "vtkLagrangeTetra.cxx",
+    "vtkLagrangeTriangle.cxx",
+    "vtkLagrangeWedge.cxx",
+    "vtkLine.cxx",
+    "vtkLocator.cxx",
+    "vtkMarchingCubesTriangleCases.cxx",
+    "vtkMarchingCubesPolygonCases.cxx",
+    "vtkMarchingSquaresLineCases.cxx",
+    "vtkMeanValueCoordinatesInterpolator.cxx",
+    "vtkMergePoints.cxx",
+    "vtkMolecule.cxx",
+    "vtkMultiBlockDataSet.cxx",
+    "vtkMultiPieceDataSet.cxx",
+    "vtkMutableDirectedGraph.cxx",
+    "vtkMutableUndirectedGraph.cxx",
+    "vtkNonLinearCell.cxx",
+    "vtkNonMergingPointLocator.cxx",
+    "vtkOctreePointLocator.cxx",
+    "vtkOctreePointLocatorNode.cxx",
+    "vtkOrderedTriangulator.cxx",
+    "vtkOutEdgeIterator.cxx",
+    "vtkPartitionedDataSet.cxx",
+    "vtkPartitionedDataSetCollection.cxx",
+    "vtkPath.cxx",
+    "vtkPentagonalPrism.cxx",
+    "vtkPerlinNoise.cxx",
+    "vtkPiecewiseFunction.cxx",
+    "vtkPixel.cxx",
+    "vtkPixelExtent.cxx",
+    "vtkPixelTransfer.cxx",
+    "vtkPlane.cxx",
+    "vtkPlaneCollection.cxx",
+    "vtkPlanes.cxx",
+    "vtkPlanesIntersection.cxx",
+    "vtkPointData.cxx",
+    "vtkPointLocator.cxx",
+    "vtkPointSet.cxx",
+    "vtkPointSetCellIterator.cxx",
+    "vtkPointsProjectedHull.cxx",
+    "vtkPolyData.cxx",
+    "vtkPolyDataCollection.cxx",
+    "vtkPolyLine.cxx",
+    "vtkPolyPlane.cxx",
+    "vtkPolyVertex.cxx",
+    "vtkPolygon.cxx",
+    "vtkPolyhedron.cxx",
+    "vtkPolyhedronUtilities.cxx",
+    "vtkPyramid.cxx",
+    "vtkQuad.cxx",
+    "vtkQuadraticEdge.cxx",
+    "vtkQuadraticHexahedron.cxx",
+    "vtkQuadraticLinearQuad.cxx",
+    "vtkQuadraticLinearWedge.cxx",
+    "vtkQuadraticPolygon.cxx",
+    "vtkQuadraticPyramid.cxx",
+    "vtkQuadraticQuad.cxx",
+    "vtkQuadraticTetra.cxx",
+    "vtkQuadraticTriangle.cxx",
+    "vtkQuadraticWedge.cxx",
+    "vtkQuadratureSchemeDefinition.cxx",
+    "vtkQuadric.cxx",
+    "vtkRectilinearGrid.cxx",
+    "vtkReebGraph.cxx",
+    "vtkReebGraphSimplificationMetric.cxx",
+    "vtkSelection.cxx",
+    "vtkSelectionNode.cxx",
+    "vtkSimpleCellTessellator.cxx",
+    "vtkSmoothErrorMetric.cxx",
+    "vtkSortFieldData.cxx",
+    "vtkSphere.cxx",
+    "vtkSpheres.cxx",
+    "vtkSphericalPointIterator.cxx",
+    "vtkSpline.cxx",
+    "vtkStaticCellLinks.cxx",
+    "vtkStaticCellLocator.cxx",
+    "vtkStaticPointLocator.cxx",
+    "vtkStaticPointLocator2D.cxx",
+    "vtkStructuredData.cxx",
+    "vtkStructuredExtent.cxx",
+    "vtkStructuredGrid.cxx",
+    "vtkStructuredPoints.cxx",
+    "vtkStructuredPointsCollection.cxx",
+    "vtkSuperquadric.cxx",
+    "vtkTable.cxx",
+    "vtkTetra.cxx",
+    "vtkTree.cxx",
+    "vtkTreeBFSIterator.cxx",
+    "vtkTreeDFSIterator.cxx",
+    "vtkTreeIterator.cxx",
+    "vtkTriQuadraticHexahedron.cxx",
+    "vtkTriQuadraticPyramid.cxx",
+    "vtkTriangle.cxx",
+    "vtkTriangleStrip.cxx",
+    "vtkUndirectedGraph.cxx",
+    "vtkUniformGrid.cxx",
+    "vtkUniformHyperTreeGrid.cxx",
+    "vtkUnstructuredGrid.cxx",
+    "vtkUnstructuredGridBase.cxx",
+    "vtkUnstructuredGridCellIterator.cxx",
+    "vtkVertex.cxx",
+    "vtkVertexListIterator.cxx",
+    "vtkVoxel.cxx",
+    "vtkWedge.cxx",
+    "vtkXMLDataElement.cxx",
+    "vtkAMRDataInternals.cxx",
+    "vtkAMRInformation.cxx",
+    "vtkNonOverlappingAMR.cxx",
+    "vtkOverlappingAMR.cxx",
+    "vtkUniformGridAMR.cxx",
+    "vtkUniformGridAMRDataIterator.cxx",
+};
+
+const commonMathConfigHeaders = &.{};
+
+const commonMathSources = &.{
+    "vtkAmoebaMinimizer.cxx",
+    "vtkFFT.cxx",
+    "vtkFunctionSet.cxx",
+    "vtkInitialValueProblemSolver.cxx",
+    "vtkMatrix3x3.cxx",
+    "vtkMatrix4x4.cxx",
+    "vtkPolynomialSolversUnivariate.cxx",
+    "vtkQuaternionInterpolator.cxx",
+    "vtkRungeKutta2.cxx",
+    "vtkRungeKutta4.cxx",
+    "vtkRungeKutta45.cxx",
+};
+
 const VtkConfErrors = error{
     ConfFileNotFound,
 };
 
-pub fn addVtkCommon(b: *std.Build, dep: *Dependency, target: TargetOpts, optimize: OptimizeOpts) !*std.Build.Step.Compile {
+pub fn addVtkCommon(b: *std.Build, dep: *Dependency, target: TargetOpts, optimize: OptimizeOpts) !void {
     var commonCore = b.addStaticLibrary(.{
         .name = "vtkCommonCore",
         .target = target,
         .optimize = optimize,
     });
 
-    //var commonDataModel = b.addStaticLibrary(.{
-    //    .name = "vtkCommonDataModel",
-    //    .target = target,
-    //    .optimize = optimize,
-    //});
+    var commonMath = b.addStaticLibrary(.{
+        .name = "vtkCommonMath",
+        .target = target,
+        .optimize = optimize,
+    });
+
+    var commonDataModel = b.addStaticLibrary(.{
+        .name = "vtkCommonDataModel",
+        .target = target,
+        .optimize = optimize,
+    });
 
     var vtkSys = b.addStaticLibrary(.{
         .name = "vtkSys",
@@ -229,6 +515,8 @@ pub fn addVtkCommon(b: *std.Build, dep: *Dependency, target: TargetOpts, optimiz
 
         vtkSys.addConfigHeader(tmp);
         commonCore.addConfigHeader(tmp);
+        commonMath.addConfigHeader(tmp);
+        commonDataModel.addConfigHeader(tmp);
     }
 
     vtkSys.defineCMacro("KWSYS_NAMESPACE", "vtksys");
@@ -268,11 +556,14 @@ pub fn addVtkCommon(b: *std.Build, dep: *Dependency, target: TargetOpts, optimiz
                 .VTK_DISPATCH_AFFINE_ARRAYS = 1,
                 .VTK_DISPATCH_CONSTANT_ARRAYS = 1,
                 .VTK_DISPATCH_STD_FUNCTION_ARRAYS = 1,
+                .VTK_HAS_CXXABI_DEMANGLE = 1,
                 .VTK_ARRAYDISPATCH_ARRAY_LIST = arrDispatch.result.items,
             },
         );
 
         commonCore.addConfigHeader(tmp);
+        commonMath.addConfigHeader(tmp);
+        commonDataModel.addConfigHeader(tmp);
     }
 
     commonCore.defineCMacro("VTK_SMP_IMPLEMENTATION_TYPE", "Sequential");
@@ -292,7 +583,48 @@ pub fn addVtkCommon(b: *std.Build, dep: *Dependency, target: TargetOpts, optimiz
         .files = &commonCoreSources,
         .flags = &.{"-std=c++17"},
     });
-    return commonCore;
+
+    //commonMath.defineCMacro("USE_SIMD", "1");
+    commonMath.defineCMacro("kiss_fft_scalar", "double");
+
+    commonMath.linkLibCpp();
+    commonMath.linkLibrary(vtkSys);
+    commonMath.linkLibrary(commonCore);
+    commonMath.addIncludePath(dep.path(commonCorePath));
+    commonMath.addIncludePath(dep.path(commonMathPath));
+    commonMath.addIncludePath(dep.path(commonDataModelPath));
+    commonMath.addIncludePath(dep.path("Utilities/KWIML"));
+    commonMath.addIncludePath(dep.path("Utilities/KWSys"));
+    commonMath.addIncludePath(b.path("include"));
+    commonMath.addIncludePath(b.path("include/vtk_typed_arrays"));
+    commonMath.addIncludePath(b.path("zig-out/include"));
+    commonMath.addIncludePath(b.path("zig-out/include/vtkkissfft"));
+    commonMath.addIncludePath(dep.path(thirdparty.kissFFTPath));
+    commonMath.addCSourceFiles(.{
+        .root = dep.path(commonMathPath),
+        .files = commonMathSources,
+        .flags = &.{ "-std=c++17", "-Wno-narrowing" },
+    });
+
+    commonDataModel.linkLibCpp();
+    commonDataModel.linkLibrary(commonCore);
+    commonDataModel.linkLibrary(commonMath);
+    commonDataModel.addIncludePath(dep.path(commonDataModelPath));
+    commonDataModel.addIncludePath(dep.path(commonCorePath));
+    commonDataModel.addIncludePath(dep.path(commonMathPath));
+    commonDataModel.addIncludePath(dep.path("Utilities/KWIML"));
+    commonDataModel.addIncludePath(b.path("include"));
+    commonDataModel.addIncludePath(b.path("include/vtk_typed_arrays"));
+    commonDataModel.addCSourceFiles(.{
+        .root = dep.path(commonDataModelPath),
+        .files = commonDataModelSources,
+        .flags = &.{"-std=c++17"},
+    });
+
+    b.installArtifact(vtkSys);
+    b.installArtifact(commonCore);
+    b.installArtifact(commonMath);
+    b.installArtifact(commonDataModel);
 }
 
 const vtk_types = &.{

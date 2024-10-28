@@ -1,5 +1,6 @@
 const std = @import("std");
 const vcm = @import("vtk-conf/buildVtkCommon.zig");
+const thirdparty = @import("vtk-conf/buildVtkThirdParty.zig");
 
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
@@ -11,10 +12,13 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
-    const vtkCommon = vcm.addVtkCommon(b, vtk, target, optimize) catch |err| {
+    thirdparty.addVtkThirdparty(b, vtk, target, optimize) catch |err| {
         std.log.err("Error: {} \n", .{err});
         return;
     };
 
-    b.installArtifact(vtkCommon);
+    vcm.addVtkCommon(b, vtk, target, optimize) catch |err| {
+        std.log.err("Error: {} \n", .{err});
+        return;
+    };
 }
