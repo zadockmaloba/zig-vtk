@@ -12,6 +12,8 @@ const ArrayList = std.ArrayList;
 const commonCorePath = "Common/Core/";
 const commonDataModelPath = "Common/DataModel/";
 const commonMathPath = "Common/Math/";
+const commonMiscPath = "Common/Misc/";
+const commonSystemPath = "Common/System/";
 const vtkSysPath = "Utilities/KWSys/vtksys/";
 
 const commonCoreConfigHeaders = .{
@@ -465,6 +467,30 @@ const commonMathSources = &.{
     "vtkRungeKutta45.cxx",
 };
 
+const commonMiscConfigHeaders = &.{};
+
+const commonMiscSources = &.{
+    "vtkContourValues.cxx",
+    "vtkErrorCode.cxx",
+    "vtkExprTkFunctionParser.cxx",
+    "vtkFunctionParser.cxx",
+    "vtkHeap.cxx",
+    "vtkPolygonBuilder.cxx",
+    "vtkResourceFileLocator.cxx",
+};
+
+const commonSystemConfigHeaders = &.{};
+
+const commonSystemSources = &.{
+    "vtkClientSocket.cxx",
+    "vtkDirectory.cxx",
+    "vtkExecutableRunner.cxx",
+    "vtkServerSocket.cxx",
+    "vtkSocket.cxx",
+    "vtkSocketCollection.cxx",
+    "vtkTimerLog.cxx",
+};
+
 const VtkConfErrors = error{
     ConfFileNotFound,
 };
@@ -476,8 +502,20 @@ pub fn addVtkCommon(b: *std.Build, dep: *Dependency, target: TargetOpts, optimiz
         .optimize = optimize,
     });
 
+    var commonSystem = b.addStaticLibrary(.{
+        .name = "vtkCommonSystem",
+        .target = target,
+        .optimize = optimize,
+    });
+
     var commonMath = b.addStaticLibrary(.{
         .name = "vtkCommonMath",
+        .target = target,
+        .optimize = optimize,
+    });
+
+    var commonMisc = b.addStaticLibrary(.{
+        .name = "vtkCommonMisc",
         .target = target,
         .optimize = optimize,
     });
@@ -513,14 +551,17 @@ pub fn addVtkCommon(b: *std.Build, dep: *Dependency, target: TargetOpts, optimiz
             },
         );
 
+        vtkSys.installConfigHeader(tmp);
         vtkSys.addConfigHeader(tmp);
-        commonCore.addConfigHeader(tmp);
-        commonMath.addConfigHeader(tmp);
-        commonDataModel.addConfigHeader(tmp);
+        //commonCore.addConfigHeader(tmp);
+        //commonMisc.addConfigHeader(tmp);
+        //commonMath.addConfigHeader(tmp);
+        //commonDataModel.addConfigHeader(tmp);
     }
 
     vtkSys.defineCMacro("KWSYS_NAMESPACE", "vtksys");
 
+    vtkSys.addIncludePath(b.path("include"));
     vtkSys.addCSourceFiles(.{
         .root = dep.path(vtkSysPath),
         .files = &vtkSysSources,
@@ -561,9 +602,11 @@ pub fn addVtkCommon(b: *std.Build, dep: *Dependency, target: TargetOpts, optimiz
             },
         );
 
+        commonCore.installConfigHeader(tmp);
         commonCore.addConfigHeader(tmp);
-        commonMath.addConfigHeader(tmp);
-        commonDataModel.addConfigHeader(tmp);
+        //commonMath.addConfigHeader(tmp);
+        //commonMisc.addConfigHeader(tmp);
+        //commonDataModel.addConfigHeader(tmp);
     }
 
     commonCore.defineCMacro("VTK_SMP_IMPLEMENTATION_TYPE", "Sequential");
@@ -577,10 +620,28 @@ pub fn addVtkCommon(b: *std.Build, dep: *Dependency, target: TargetOpts, optimiz
     commonCore.addIncludePath(dep.path("Utilities/KWIML"));
     commonCore.addIncludePath(dep.path("Utilities/KWSys"));
     commonCore.addIncludePath(b.path("include"));
+    commonCore.addIncludePath(b.path("zig-out/include"));
     commonCore.addIncludePath(b.path("include/vtk_typed_arrays"));
     commonCore.addCSourceFiles(.{
         .root = dep.path(commonCorePath),
         .files = &commonCoreSources,
+        .flags = &.{"-std=c++17"},
+    });
+
+    commonSystem.defineCMacro("VTK_HAVE_GETSOCKNAME_WITH_SOCKLEN_T", "1");
+
+    commonSystem.linkLibCpp();
+    commonSystem.linkLibrary(commonCore);
+    commonSystem.addIncludePath(dep.path(commonCorePath));
+    commonSystem.addIncludePath(dep.path(commonDataModelPath));
+    commonSystem.addIncludePath(dep.path("Utilities/KWIML"));
+    commonSystem.addIncludePath(dep.path("Utilities/KWSys"));
+    commonSystem.addIncludePath(b.path("include"));
+    commonSystem.addIncludePath(b.path("zig-out/include"));
+    commonSystem.addIncludePath(b.path("include/vtk_typed_arrays"));
+    commonSystem.addCSourceFiles(.{
+        .root = dep.path(commonSystemPath),
+        .files = commonSystemSources,
         .flags = &.{"-std=c++17"},
     });
 
@@ -606,15 +667,42 @@ pub fn addVtkCommon(b: *std.Build, dep: *Dependency, target: TargetOpts, optimiz
         .flags = &.{ "-std=c++17", "-Wno-narrowing" },
     });
 
+    commonMisc.linkLibCpp();
+    commonMisc.linkLibrary(vtkSys);
+    commonMisc.linkLibrary(commonMath);
+    commonMisc.addIncludePath(dep.path(commonMathPath));
+    commonMisc.addIncludePath(dep.path(commonMiscPath));
+    commonMisc.addIncludePath(dep.path(commonCorePath));
+    commonMisc.addIncludePath(dep.path(commonDataModelPath));
+    commonMisc.addIncludePath(dep.path("Utilities/KWIML"));
+    commonMisc.addIncludePath(dep.path("Utilities/KWSys"));
+    commonMisc.addIncludePath(b.path("include"));
+    commonMisc.addIncludePath(b.path("include/vtk_typed_arrays"));
+    commonMisc.addIncludePath(b.path("zig-out/include"));
+    commonMisc.addIncludePath(b.path("zig-out/include/vtkkissfft"));
+    commonMisc.addIncludePath(dep.path(thirdparty.kissFFTPath));
+    commonMisc.addIncludePath(dep.path(thirdparty.exprTKPath));
+    commonMisc.addCSourceFiles(.{
+        .root = dep.path(commonMiscPath),
+        .files = commonMiscSources,
+        .flags = &.{"-std=c++17"},
+    });
+
     commonDataModel.linkLibCpp();
     commonDataModel.linkLibrary(commonCore);
     commonDataModel.linkLibrary(commonMath);
+    commonDataModel.linkLibrary(commonMisc);
+    commonDataModel.linkLibrary(commonSystem);
     commonDataModel.addIncludePath(dep.path(commonDataModelPath));
     commonDataModel.addIncludePath(dep.path(commonCorePath));
     commonDataModel.addIncludePath(dep.path(commonMathPath));
+    commonDataModel.addIncludePath(dep.path(commonMiscPath));
+    commonDataModel.addIncludePath(dep.path(commonSystemPath));
     commonDataModel.addIncludePath(dep.path("Utilities/KWIML"));
     commonDataModel.addIncludePath(b.path("include"));
     commonDataModel.addIncludePath(b.path("include/vtk_typed_arrays"));
+    commonDataModel.addIncludePath(dep.path(thirdparty.kissFFTPath));
+    commonDataModel.addIncludePath(dep.path(thirdparty.exprTKPath));
     commonDataModel.addCSourceFiles(.{
         .root = dep.path(commonDataModelPath),
         .files = commonDataModelSources,
@@ -623,6 +711,8 @@ pub fn addVtkCommon(b: *std.Build, dep: *Dependency, target: TargetOpts, optimiz
 
     b.installArtifact(vtkSys);
     b.installArtifact(commonCore);
+    b.installArtifact(commonSystem);
+    b.installArtifact(commonMisc);
     b.installArtifact(commonMath);
     b.installArtifact(commonDataModel);
 }

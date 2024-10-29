@@ -8,6 +8,7 @@ const Allocator = std.mem.Allocator;
 const ArrayList = std.ArrayList;
 
 pub const kissFFTPath = "ThirdParty/kissfft/";
+pub const exprTKPath = "ThirdParty/exprtk/";
 
 pub const kissFFTConfigHeaders = &.{"vtk_kissfft.h"};
 
@@ -17,6 +18,10 @@ const kissFFTSources = &.{
     "tools/kiss_fftnd.c",
     "tools/kiss_fftndr.c",
     "tools/kiss_fftr.c",
+};
+
+const exprTKConfigHeaders = &.{
+    "vtk_exprtk.h",
 };
 
 pub fn addVtkThirdparty(b: *std.Build, dep: *Dependency, target: TargetOpts, optimize: OptimizeOpts) !void {
@@ -30,7 +35,7 @@ pub fn addVtkThirdparty(b: *std.Build, dep: *Dependency, target: TargetOpts, opt
         const tmp = b.addConfigHeader(
             .{
                 .style = .{ .cmake = dep.path(kissFFTPath ++ conf_header ++ ".in") },
-                .include_path = "vtkkissfft/" ++ conf_header,
+                .include_path = conf_header,
             },
             .{
                 .VTK_MODULE_USE_EXTERNAL_vtkkissfft = 0,
@@ -51,6 +56,20 @@ pub fn addVtkThirdparty(b: *std.Build, dep: *Dependency, target: TargetOpts, opt
         .files = kissFFTSources,
         .flags = &.{ "-std=c17", "-Wno-narrowing" },
     });
+
+    inline for (exprTKConfigHeaders) |conf_header| {
+        const tmp = b.addConfigHeader(
+            .{
+                .style = .{ .cmake = dep.path(exprTKPath ++ conf_header ++ ".in") },
+                .include_path = conf_header,
+            },
+            .{
+                .VTK_MODULE_USE_EXTERNAL_VTK_exprtk = 0,
+            },
+        );
+
+        kissFFT.installConfigHeader(tmp);
+    }
 
     b.installArtifact(kissFFT);
 }
