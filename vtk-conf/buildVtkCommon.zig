@@ -12,6 +12,7 @@ const ArrayList = std.ArrayList;
 const commonCorePath = "Common/Core/";
 const commonDataModelPath = "Common/DataModel/";
 const commonMathPath = "Common/Math/";
+const commonTransformsPath = "Common/Transforms/";
 const commonMiscPath = "Common/Misc/";
 const commonSystemPath = "Common/System/";
 const vtkSysPath = "Utilities/KWSys/vtksys/";
@@ -491,6 +492,27 @@ const commonSystemSources = &.{
     "vtkTimerLog.cxx",
 };
 
+const commonTransformsConfigHeaders = &.{};
+
+const commonTransformsSources = &.{
+    "vtkAbstractTransform.cxx",
+    "vtkCylindricalTransform.cxx",
+    "vtkGeneralTransform.cxx",
+    "vtkHomogeneousTransform.cxx",
+    "vtkIdentityTransform.cxx",
+    "vtkLandmarkTransform.cxx",
+    "vtkLinearTransform.cxx",
+    "vtkMatrixToHomogeneousTransform.cxx",
+    "vtkMatrixToLinearTransform.cxx",
+    "vtkPerspectiveTransform.cxx",
+    "vtkSphericalTransform.cxx",
+    "vtkThinPlateSplineTransform.cxx",
+    "vtkTransform.cxx",
+    "vtkTransform2D.cxx",
+    "vtkTransformCollection.cxx",
+    "vtkWarpTransform.cxx",
+};
+
 const VtkConfErrors = error{
     ConfFileNotFound,
 };
@@ -510,6 +532,12 @@ pub fn addVtkCommon(b: *std.Build, dep: *Dependency, target: TargetOpts, optimiz
 
     var commonMath = b.addStaticLibrary(.{
         .name = "vtkCommonMath",
+        .target = target,
+        .optimize = optimize,
+    });
+
+    var commonTransforms = b.addStaticLibrary(.{
+        .name = "vtkCommonTransforms",
         .target = target,
         .optimize = optimize,
     });
@@ -667,6 +695,21 @@ pub fn addVtkCommon(b: *std.Build, dep: *Dependency, target: TargetOpts, optimiz
         .flags = &.{ "-std=c++17", "-Wno-narrowing" },
     });
 
+    commonTransforms.linkLibCpp();
+    commonTransforms.linkLibrary(vtkSys);
+    commonTransforms.linkLibrary(commonMath);
+    commonTransforms.addIncludePath(dep.path(commonTransformsPath));
+    commonTransforms.addIncludePath(dep.path("Utilities/KWIML"));
+    commonTransforms.addIncludePath(dep.path("Utilities/KWSys"));
+    commonTransforms.addIncludePath(b.path("include"));
+    commonTransforms.addIncludePath(b.path("include/vtk_typed_arrays"));
+    commonTransforms.addIncludePath(b.path("zig-out/include"));
+    commonTransforms.addCSourceFiles(.{
+        .root = dep.path(commonTransformsPath),
+        .files = commonTransformsSources,
+        .flags = &.{ "-std=c++17", "-Wno-narrowing" },
+    });
+
     commonMisc.linkLibCpp();
     commonMisc.linkLibrary(vtkSys);
     commonMisc.linkLibrary(commonMath);
@@ -696,13 +739,17 @@ pub fn addVtkCommon(b: *std.Build, dep: *Dependency, target: TargetOpts, optimiz
     commonDataModel.addIncludePath(dep.path(commonDataModelPath));
     commonDataModel.addIncludePath(dep.path(commonCorePath));
     commonDataModel.addIncludePath(dep.path(commonMathPath));
+    commonDataModel.addIncludePath(dep.path(commonTransformsPath));
     commonDataModel.addIncludePath(dep.path(commonMiscPath));
     commonDataModel.addIncludePath(dep.path(commonSystemPath));
     commonDataModel.addIncludePath(dep.path("Utilities/KWIML"));
     commonDataModel.addIncludePath(b.path("include"));
     commonDataModel.addIncludePath(b.path("include/vtk_typed_arrays"));
+    commonDataModel.addIncludePath(b.path("zig-out/include"));
     commonDataModel.addIncludePath(dep.path(thirdparty.kissFFTPath));
     commonDataModel.addIncludePath(dep.path(thirdparty.exprTKPath));
+    commonDataModel.addIncludePath(dep.path(thirdparty.pugiXmlPath));
+    commonDataModel.addIncludePath(dep.path(thirdparty.pugiXmlPath ++ "vtkpugixml/"));
     commonDataModel.addCSourceFiles(.{
         .root = dep.path(commonDataModelPath),
         .files = commonDataModelSources,

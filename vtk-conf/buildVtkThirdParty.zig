@@ -9,8 +9,9 @@ const ArrayList = std.ArrayList;
 
 pub const kissFFTPath = "ThirdParty/kissfft/";
 pub const exprTKPath = "ThirdParty/exprtk/";
+pub const pugiXmlPath = "ThirdParty/pugixml/";
 
-pub const kissFFTConfigHeaders = &.{"vtk_kissfft.h"};
+const kissFFTConfigHeaders = &.{"vtk_kissfft.h"};
 
 const kissFFTSources = &.{
     "kiss_fft.c",
@@ -24,9 +25,24 @@ const exprTKConfigHeaders = &.{
     "vtk_exprtk.h",
 };
 
+const pugiXmlConfigHeaders = &.{
+    "vtk_pugixml.h",
+    "vtkpugixml/src/pugiconfig.hpp",
+};
+
+const pugiXmlSources = &.{
+    "src/pugixml.cpp",
+};
+
 pub fn addVtkThirdparty(b: *std.Build, dep: *Dependency, target: TargetOpts, optimize: OptimizeOpts) !void {
     var kissFFT = b.addStaticLibrary(.{
         .name = "vtkKissFFT",
+        .optimize = optimize,
+        .target = target,
+    });
+
+    var pugiXml = b.addStaticLibrary(.{
+        .name = "vtkPugiXml",
         .optimize = optimize,
         .target = target,
     });
@@ -68,8 +84,52 @@ pub fn addVtkThirdparty(b: *std.Build, dep: *Dependency, target: TargetOpts, opt
             },
         );
 
+        kissFFT.addConfigHeader(tmp);
         kissFFT.installConfigHeader(tmp);
     }
 
+    {
+        const tmp = b.addConfigHeader(
+            .{
+                .style = .{ .cmake = dep.path(pugiXmlPath ++ "vtk_pugixml.h" ++ ".in") },
+                .include_path = "vtk_pugixml.h",
+            },
+            .{
+                .VTK_MODULE_USE_EXTERNAL_vtkpugixml = 0,
+                .vtkpugixml_BUILD_SHARED_LIBS = 0,
+            },
+        );
+
+        pugiXml.addConfigHeader(tmp);
+        pugiXml.installConfigHeader(tmp);
+    }
+
+    {
+        const tmp = b.addConfigHeader(
+            .{
+                .style = .{ .cmake = dep.path(pugiXmlPath ++ "vtkpugixml/src/pugiconfig.hpp" ++ ".in") },
+                .include_path = "pugiconfig.hpp",
+            },
+            .{
+                .VTK_MODULE_USE_EXTERNAL_vtkpugixml = 0,
+                .vtkpugixml_BUILD_SHARED_LIBS = 0,
+            },
+        );
+
+        pugiXml.addConfigHeader(tmp);
+        pugiXml.installConfigHeader(tmp);
+    }
+
+    pugiXml.linkLibCpp();
+    pugiXml.addIncludePath(dep.path(pugiXmlPath));
+    pugiXml.addIncludePath(dep.path(pugiXmlPath ++ "vtkpugixml"));
+    pugiXml.addIncludePath(dep.path(pugiXmlPath ++ "vtkpugixml/src"));
+    pugiXml.addCSourceFiles(.{
+        .root = dep.path(pugiXmlPath ++ "vtkpugixml"),
+        .files = pugiXmlSources,
+        .flags = &.{ "-std=c++17", "-Wno-narrowing" },
+    });
+
     b.installArtifact(kissFFT);
+    b.installArtifact(pugiXml);
 }
