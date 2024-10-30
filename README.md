@@ -5,7 +5,8 @@ This README tracks the progress of porting various VTK modules to the Zig build 
 ## Progress Tracking
 
 - [x] **VTK Common Core**  
-- [ ] **VTK Common DataModel**  
+- [x] **VTK Common DataModel**
+- [x] **VTK Common Math**
 - [ ] **VTK IO**  
     - [ ] **VTK I/O XML**  
     - [ ] **VTK I/O Legacy**  
@@ -29,7 +30,6 @@ This README tracks the progress of porting various VTK modules to the Zig build 
 - [ ] **VTK Rendering Volume**  
 - [ ] **VTK Rendering FreeType**  
 - [ ] **VTK Rendering ContextOpenGL2**  
-- [ ] **VTK Common Math**  
 - [ ] **VTK Accelerators VTKm** 
 - [ ] **VTK Utilities** 
     - [ ] **vtkkwiml**  
