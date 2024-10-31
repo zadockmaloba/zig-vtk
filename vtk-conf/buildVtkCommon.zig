@@ -14,6 +14,7 @@ const commonDataModelPath = "Common/DataModel/";
 const commonMathPath = "Common/Math/";
 const commonTransformsPath = "Common/Transforms/";
 const commonMiscPath = "Common/Misc/";
+const commonColorPath = "Common/Color/";
 const commonSystemPath = "Common/System/";
 const vtkSysPath = "Utilities/KWSys/vtksys/";
 
@@ -513,6 +514,13 @@ const commonTransformsSources = &.{
     "vtkWarpTransform.cxx",
 };
 
+const commonColorConfigHeaders = &.{};
+
+const commonColorSources = &.{
+    "vtkColorSeries.cxx",
+    "vtkNamedColors.cxx",
+};
+
 const VtkConfErrors = error{
     ConfFileNotFound,
 };
@@ -538,6 +546,12 @@ pub fn addVtkCommon(b: *std.Build, dep: *Dependency, target: TargetOpts, optimiz
 
     var commonTransforms = b.addStaticLibrary(.{
         .name = "vtkCommonTransforms",
+        .target = target,
+        .optimize = optimize,
+    });
+
+    var commonColor = b.addStaticLibrary(.{
+        .name = "vtkCommonColor",
         .target = target,
         .optimize = optimize,
     });
@@ -731,6 +745,27 @@ pub fn addVtkCommon(b: *std.Build, dep: *Dependency, target: TargetOpts, optimiz
         .flags = &.{"-std=c++17"},
     });
 
+    commonColor.linkLibCpp();
+    commonColor.linkLibrary(vtkSys);
+    commonColor.linkLibrary(commonCore);
+    commonColor.linkLibrary(commonMisc);
+    commonColor.addIncludePath(dep.path(commonMathPath));
+    commonColor.addIncludePath(dep.path(commonMiscPath));
+    commonColor.addIncludePath(dep.path(commonCorePath));
+    commonColor.addIncludePath(dep.path(commonDataModelPath));
+    commonColor.addIncludePath(dep.path("Utilities/KWIML"));
+    commonColor.addIncludePath(dep.path("Utilities/KWSys"));
+    commonColor.addIncludePath(b.path("include"));
+    commonColor.addIncludePath(b.path("include/vtk_typed_arrays"));
+    commonColor.addIncludePath(b.path("zig-out/include"));
+    commonColor.addIncludePath(b.path("zig-out/include/vtkkissfft"));
+    commonColor.addIncludePath(dep.path(thirdparty.kissFFTPath));
+    commonColor.addCSourceFiles(.{
+        .root = dep.path(commonColorPath),
+        .files = commonColorSources,
+        .flags = &.{"-std=c++17"},
+    });
+
     commonDataModel.linkLibCpp();
     commonDataModel.linkLibrary(commonCore);
     commonDataModel.linkLibrary(commonMath);
@@ -756,9 +791,17 @@ pub fn addVtkCommon(b: *std.Build, dep: *Dependency, target: TargetOpts, optimiz
         .flags = &.{"-std=c++17"},
     });
 
+    commonCore.installLibraryHeaders(vtkSys);
+    //commonCore.installLibraryHeaders(commonCore);
+    commonCore.installLibraryHeaders(commonSystem);
+    commonCore.installLibraryHeaders(commonMisc);
+    commonCore.installLibraryHeaders(commonMath);
+    commonCore.installLibraryHeaders(commonDataModel);
+
     b.installArtifact(vtkSys);
     b.installArtifact(commonCore);
     b.installArtifact(commonSystem);
+    b.installArtifact(commonColor);
     b.installArtifact(commonMisc);
     b.installArtifact(commonMath);
     b.installArtifact(commonDataModel);
