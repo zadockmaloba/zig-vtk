@@ -26,7 +26,8 @@ This README tracks the progress of porting various VTK modules to the Zig build 
     - [ ] **VTK Rendering Core**  
     - [ ] **VTK Rendering OpenGL2**
 - [ ] **VTK Interaction**
-    - [ ] **VTK Interaction Style**  
+    - [ ] **VTK Interaction Style**
+    - [ ] **VTK Interaction Image** 
     - [ ] **VTK Interaction Widgets** 
 - [ ] **VTK Imaging**
     - [ ] **VTK Imaging Core**  
@@ -34,7 +35,11 @@ This README tracks the progress of porting various VTK modules to the Zig build 
     - [ ] **VTK Imaging Morphological**  
 - [ ] **VTK Parallel MPI**  
 - [ ] **VTK Parallel Core**  
-- [ ] **VTK Views Core**  
+- [ ] **VTK Views**
+    - [ ] **VTK Views Context2D**  
+    - [ ] **VTK Views Core**
+    - [ ] **VTK Views Infovis**
+    - [ ] **VTK Views Qt**
 - [ ] **VTK Charts Core**  
 - [ ] **VTK Accelerators VTKm** 
 - [ ] **VTK Utilities** 
